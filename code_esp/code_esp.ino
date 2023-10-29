@@ -1,40 +1,40 @@
-#include <Servo.h>  //servo library
-Servo myservo;      // create servo object to control servo
 
 //Ultrasonic sensor variables
-int Echo = A4;  
-int Trig = A5; 
+int Trig = 23; 
+
 
 //motor controller pins
-#define ENA1 5
-#define ENA2 3
-#define ENB1 6
-#define ENB2 6
-#define IN1 7
-#define IN2 8
-#define IN3 9
-#define IN4 10
+#define ENA 13
+#define ENB 25
+#define IN1 12
+#define IN2 14
+#define IN3 27
+#define IN4 26
+
+// ECHO PINS OF ULT S
+#define ECHO1 18
+#define ECHO2 19
+#define ECHO3 21
+
+//Buzzer Pin
+#define Buzz 32
+
+
 #define carSpeed 150
 #define carSpeed2 150
-int rightDistance = 0, leftDistance = 0;
 
 void forward(){ 
-  analogWrite(ENA1, carSpeed);
-  analogWrite(ENA2, carSpeed);
-  analogWrite(ENB1, carSpeed);
-  analogWrite(ENB2, carSpeed);
+  analogWrite(ENA, carSpeed);
+  analogWrite(ENB, carSpeed);
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
   Serial.println("Forward");
-}
-
+} 
 void back() {
-  analogWrite(ENA1, carSpeed);
-  analogWrite(ENA2, carSpeed);
-  analogWrite(ENB1, carSpeed);
-  analogWrite(ENB2, carSpeed);
+  analogWrite(ENA, carSpeed);
+  analogWrite(ENB, carSpeed);
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
   digitalWrite(IN3, HIGH);
@@ -42,10 +42,8 @@ void back() {
   Serial.println("Back");
 }
 void left() {
-  analogWrite(ENA1, carSpeed);
-  analogWrite(ENA2, carSpeed);
-  analogWrite(ENB1, carSpeed);
-  analogWrite(ENB2, carSpeed);
+  analogWrite(ENA, carSpeed2);
+  analogWrite(ENB, carSpeed2);
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
   digitalWrite(IN3, LOW);
@@ -53,10 +51,8 @@ void left() {
   Serial.println("Left");
 }
 void right() {
-  analogWrite(ENA1, carSpeed2);
-  analogWrite(ENA2, carSpeed2);
-  analogWrite(ENB1, carSpeed2);
-  analogWrite(ENB2, carSpeed2);
+  analogWrite(ENA, carSpeed2);
+  analogWrite(ENB, carSpeed2);
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, HIGH);
@@ -64,78 +60,53 @@ void right() {
   Serial.println("Right");
 }
 void stop() {
-  digitalWrite(ENA1, LOW);
-  digitalWrite(ENA2, LOW);
-  digitalWrite(ENB1, LOW);
-  digitalWrite(ENB2, LOW);
+  digitalWrite(ENA, LOW);
+  digitalWrite(ENB, LOW);
   Serial.println("Stop!");
 } 
 
 //Ultrasonic distance measurement method
-int Distance_test() {
+void  get_distances(float &distance1, float &distance2, float &distance3) {
   digitalWrite(Trig, LOW);   
   delayMicroseconds(2);
   digitalWrite(Trig, HIGH);  
   delayMicroseconds(20);
   digitalWrite(Trig, LOW);   
-  float Fdistance = pulseIn(Echo, HIGH);  
-  Fdistance= Fdistance / 58;   
-  Serial.print(Fdistance);    
-  return (int)Fdistance;
+  float raw1 = pulseIn(ECHO1, HIGH);  
+  distance1= raw1 / 58; 
+  float raw2 = pulseIn(ECHO2, HIGH);  
+  distance2= raw2 / 58;
+  float raw3 = pulseIn(ECHO1, HIGH);  
+  distance3= raw3 / 58;      
+  
 }  
 
 void setup() { 
-  myservo.attach(3);  // attach servo on pin 3 to servo object
-  Serial.begin(9600);     
-  pinMode(Echo, INPUT);    
+  Serial.begin(115200);     
+  pinMode(ECHO1, INPUT);
+  pinMode(ECHO2, INPUT);    
+  pinMode(ECHO3, INPUT);    
+  pinMode(Buzz, OUTPUT); 
   pinMode(Trig, OUTPUT);  
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
-  pinMode(ENA1, OUTPUT);
-  pinMode(ENA2, OUTPUT);
-  pinMode(ENB1, OUTPUT);
-  pinMode(ENB2, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
   stop();
 } 
 
 void loop() { 
-  
-    myservo.write(60);  //setservo position to right side
-    delay(200); 
-    rightDistance = Distance_test();
+  float distance1, distance2, distance3;
 
-    myservo.write(120);  //setservo position to left side
-    delay(200); 
-    leftDistance = Distance_test();
-
-
-    if((rightDistance > 70)&&(leftDistance > 70)){
-      stop();
-    }else if((rightDistance >= 20) && (leftDistance >= 20)) {     
-      forward();
-    }else if((rightDistance <= 10) && (leftDistance <= 10)) {
-        back();
-        delay(100);
-    }else if(rightDistance - 3 > leftDistance) {
-        left();
-        delay(100);
-    }else if(rightDistance + 3 < leftDistance) {
-        right();
-        delay(100);
-    }else{
-      stop();
-    }
-  
-  
   forward();
-  delay(2000);
-  back();
-  delay(2000);
-  left();
-  delay(2000);
-  right();
-  delay(2000);
-  
+
+  get_distances(distance1, distance2, distance3);
+   
+  float total_dist = distance1 + distance2 + distance3;
+  if ((total_dist > 0) || (total_dist<0)){
+    digitalWrite(Buzz, HIGH);
+  }
+  delay(200);
 }
